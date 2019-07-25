@@ -1,15 +1,14 @@
 class GAME:
     def __init__(self):
-        self.board = [['-' for x in range(4)],['-' for x in range(4)],['-' for x in range(4)],['-' for x in range(4)],['-' for x in range(4)],['-' for x in range(4)]]
+        self.board = [['-' for x in range(7)],['-' for x in range(7)],['-' for x in range(7)],['-' for x in range(7)],['-' for x in range(7)],['-' for x in range(7)]]
         self.lastmoves = []
         self.winner = None
-        self.print_board()
 
     def print_board(self):
         c = 0
-        for i in range(3):
+        for i in range(6):
             print("|", end="")
-            for j in range(4):
+            for j in range(7):
                 c = c + 1
                 if self.board[i][j] == '-':
                     st = str(i) + "," + str(j)
@@ -28,30 +27,26 @@ class GAME:
         count = 0
         checkMarker = self.board[i][j]
 
+        #col
         col_list = self.get_column_list(i, j)
-
         if self.check_four(col_list, checkMarker):
             self.winner = checkMarker
             return True
 
         #row
         row_list = self.get_row_list(i, j)
-        
-
         if self.check_four(row_list, checkMarker):
             self.winner = checkMarker
             return True
 
         #leftdiagnol
         left_list = self.get_left_diagnol(i, j)
-
         if self.check_four(left_list, checkMarker):
             self.winner = checkMarker
             return True
 
         #rightdiagnol
         right_list = self.get_right_diagnol(i, j)
-
         if self.check_four(right_list, checkMarker):
             self.winner = checkMarker
             return True
@@ -60,13 +55,13 @@ class GAME:
 
     def get_column_list(self, i, j):
         row_list = []
-        for x in range(3):
+        for x in range(6):
             row_list.append(self.board[x][j])
         return row_list
 
     def get_row_list(self, i, j):
         col_list = []
-        for x in range(4):
+        for x in range(7):
             col_list.append(self.board[i][x])
         return col_list
 
@@ -81,7 +76,7 @@ class GAME:
 
         a = a + 1
         b = b + 1
-        while a < 3 and b < 4:
+        while a < 6 and b < 7:
             left_list.append(self.board[a][b])
             a = a + 1
             b = b + 1
@@ -91,14 +86,14 @@ class GAME:
         right_list = []
         a = i
         b = j
-        while a > 0 and b < 4:
+        while a > 0 and b < 7:
             right_list.append(self.board[a][b])
             a = a - 1
             b = b + 1
 
         a = a + 1
         b = b - 1
-        while a < 3 and b > 0:
+        while a < 6 and b > 0:
             right_list.append(self.board[a][b])
             a = a + 1
             b = b - 1
@@ -106,10 +101,10 @@ class GAME:
 
     def get_possible_moves(self):
         moves = []
-        for x in range(3):
-            for y in range(4):
+        for x in range(6):
+            for y in range(7):
                 if self.board[x][y] == '-':
-                    if x == 2 or self.board[x + 1][y] != "-":
+                    if x == 5 or self.board[x + 1][y] != "-":
                         moves.append((x,y))
         return moves
 
@@ -125,7 +120,7 @@ class GAME:
                     if lists[y] != marker:
                         break
                     count = count + 1
-                if count == 3:
+                if count == 4:
                     return True
                 else:
                     count = 0
@@ -134,7 +129,7 @@ class GAME:
     def play(self, player1, player2):
         self.p1 = player1
         self.p2 = player2
-        for i in range(42):
+        for i in range(72):
             self.print_board()
             if i%2 == 0:
                 if self.p1.type == 'H':
@@ -190,49 +185,60 @@ class AI:
             self.opponentmarker = 'R'
 
     def move(self, gameinstance):
-        mi, mj, score = self.maximized_move(gameinstance)
+        mi, mj, score = self.maximized_move(gameinstance, 0)
         gameinstance.mark(self.marker, mi, mj)
         return mi, mj
 
-    def maximized_move(self, gameinstance):
+    def maximized_move(self, gameinstance, num):
         bestscore = None
         bestMovei = None
         bestMovej = None
+        num = num + 1
+        if num < 4:
+            # print("Here" + str(num))
+            for mi, mj in gameinstance.get_possible_moves():
+                gameinstance.mark(self.marker, mi, mj)
 
-        for mi, mj in gameinstance.get_possible_moves():
-            gameinstance.mark(self.marker, mi, mj)
+                if gameinstance.is_game_over(mi, mj):
+                    score = self.get_score(gameinstance, mi, mj)
+                else:
+                    move_positioni, move_positionj, score = self.minimized_move(gameinstance, num)
 
-            if gameinstance.is_game_over(mi, mj):
-                score = self.get_score(gameinstance, mi, mj)
-            else:
-                move_positioni, move_positionj, score = self.minimized_move(gameinstance)
+                gameinstance.revert_last_move()
 
-            gameinstance.revert_last_move()
+                if score == None:
+                    score = 0
 
-            if bestscore == None or bestscore < score:
-                bestscore = score
-                bestMovei = mi
-                bestMovej = mj
+                if bestscore == None or bestscore < score:
+                    bestscore = score
+                    bestMovei = mi
+                    bestMovej = mj
         return bestMovei, bestMovej, bestscore
-    def minimized_move(self, gameinstance):
+    def minimized_move(self, gameinstance, num):
         bestscore = None
         bestMovei = None
         bestMovej = None
-        for mi, mj in gameinstance.get_possible_moves():
-            gameinstance.mark(self.opponentmarker, mi, mj)
+        num = num + 1
+        if num < 4:
+            # print("There" + str(num))
+            for mi, mj in gameinstance.get_possible_moves():
+                gameinstance.mark(self.opponentmarker, mi, mj)
 
-            if gameinstance.is_game_over(mi, mj):
-                score = self.get_score(gameinstance, mi, mj)
-                print("Score Here From Max " + str(score))
-            else:
-                move_positioni, move_positionj, score = self.maximized_move(gameinstance)
+                if gameinstance.is_game_over(mi, mj):
+                    score = self.get_score(gameinstance, mi, mj)
+                else:
+                    move_positioni, move_positionj, score = self.maximized_move(gameinstance, num)
 
-            gameinstance.revert_last_move()
+                gameinstance.revert_last_move()
 
-            if bestscore == None or bestscore > score:
-                bestscore = score
-                bestMovei = mi
-                bestMovej = mj
+                if score == None:
+                    score = 0
+
+                if bestscore == None or bestscore > score:
+                    bestscore = score
+                    bestMovei = mi
+                    bestMovej = mj
+                
         return bestMovei, bestMovej, bestscore
 
     def get_score(self, gameinstance, i, j):
@@ -248,12 +254,12 @@ class AI:
 if __name__ == '__main__':
     game = GAME()
     player1 = Human("R")
-    player2 = AI("B")
+    player2 = Human("B")
     # n = random.randint(0,2)
     # if n == 1:    
     #     game.play(player2, player1)
     # else:
     game.play(player1, player2)
     # print(game.get_possible_moves())
-    # list123 = ['A', '-', '-', '-', '-']
-    # print(game.check_four(list123, 'A'))
+    # list126 = ['A', '-', '-', '-', '-']
+    # print(game.check_four(list126, 'A'))
